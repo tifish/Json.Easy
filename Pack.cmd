@@ -2,13 +2,15 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-rd /s /q "Json.Easy\bin\Release"
+set projectName=Json.Easy
 
-dotnet pack Json.Easy -c Release || pause
+rd /s /q "%projectName%\bin\Release"
+
+dotnet pack %projectName% -c Release || pause
 
 set localNugetPath=%USERPROFILE%\LocalNuget
 mkdir "%localNugetPath%"
 dotnet nuget add source "%localNugetPath%" -n LocalTest
-copy /y "Json.Easy\bin\Release\*.nupkg" "%localNugetPath%" || pause
+copy /y "%projectName%\bin\Release\*.nupkg" "%localNugetPath%" || pause
 
 endlocal
