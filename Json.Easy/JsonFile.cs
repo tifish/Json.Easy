@@ -53,8 +53,34 @@ public class JsonFile
     public async Task Save<T>(T obj)
         where T : class
     {
-        await using var fileStream = File.Create(FilePath);
-        await JsonSerializer.SerializeAsync(fileStream, obj, JsonSerializerOptions);
+        // 先写入临时文件再原子替换，避免序列化过程中进程退出（被杀、崩溃、关机）
+        // 在目标路径留下一个被截断的、无法解析的文件。
+        var tempFilePath = $"{FilePath}.{Guid.NewGuid():N}.tmp";
+
+        try
+        {
+            await using (var fileStream = File.Create(tempFilePath))
+            {
+                await JsonSerializer.SerializeAsync(fileStream, obj, JsonSerializerOptions);
+                // Flush(true) 会把数据刷到磁盘而不只是操作系统缓存，断电时也不会得到半个文件。
+                fileStream.Flush(true);
+            }
+
+            File.Move(tempFilePath, FilePath, true);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(tempFilePath);
+            }
+            catch
+            {
+                // 清理临时文件失败不应该掩盖原本的异常。
+            }
+
+            throw;
+        }
     }
 
     public static T? FromJson<T>(string json)

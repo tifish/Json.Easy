@@ -22,6 +22,9 @@ var jsonNode = await jsonFile.Load();
 await jsonFile.Save(jsonNode);
 ```
 
+`Save` writes to a temporary file and then atomically replaces the target file, so a
+crash or a killed process never leaves a truncated, unparsable file behind.
+
 ## JsonNode Extensions
 
 ```c#
